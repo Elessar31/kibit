@@ -25,7 +25,7 @@ public class AccountService {
                 .orElseThrow(() -> new AccountNotFoundException("Account not found"));
     }
 
-    public Account changeBalance(Long accountId, BigDecimal balance, Long transactionId) {
+    public Account updateBalance(Long accountId, BigDecimal balance, Long transactionId) {
         Account account = getAccountById(accountId);
         BigDecimal oldBalance = account.getBalance();
         account.setBalance(balance);

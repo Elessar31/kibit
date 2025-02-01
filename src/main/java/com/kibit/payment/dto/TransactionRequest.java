@@ -1,5 +1,7 @@
 package com.kibit.payment.dto;
 
+import lombok.AllArgsConstructor;
+
 import java.math.BigDecimal;
 
 public class TransactionRequest {
