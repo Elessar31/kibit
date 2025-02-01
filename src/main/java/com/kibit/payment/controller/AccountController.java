@@ -23,4 +23,5 @@ public class AccountController {
     public ResponseEntity<Account> getAccountById(@PathVariable Long id) {
         return ResponseEntity.ok(accountService.getAccountById(id));
     }
+
 }

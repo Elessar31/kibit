@@ -1,5 +1,7 @@
 package com.kibit.payment.service;
 
+import com.kibit.payment.dto.TransactionRequest;
+import com.kibit.payment.entity.Account;
 import com.kibit.payment.entity.Transaction;
 import com.kibit.payment.entity.TransactionStatus;
 import com.kibit.payment.repository.TransactionRepository;
@@ -7,6 +9,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+
 
 @Service
 @Transactional
@@ -23,23 +26,43 @@ public class TransactionService {
         this.kafkaProducerService = kafkaProducerService;
     }
 
-    public Transaction processTransaction(Long senderId, Long receiverId, BigDecimal amount) {
-        if (senderId.equals(receiverId)) {
+    public Transaction processTransaction(TransactionRequest request) {
+        if (request.getSenderAccountId().equals(request.getReceiverAccountId())) {
             throw new RuntimeException("Sender and receiver cannot be the same");
+        }
+
+        String currencyChanged = "";
+
+        Account sender = accountService.getAccountById(request.getSenderAccountId());
+        Account receiver = accountService.getAccountById(request.getReceiverAccountId());
+
+        BigDecimal amount = request.getAmount();
+        if (sender.getBalance().compareTo(amount) < 0) {
+            throw new RuntimeException("Sender balance is less than the requested amount");
+        }
+
+        if (!sender.getCurrency().equalsIgnoreCase(receiver.getCurrency())) {
+            currencyChanged = convertCurrencies(amount, sender.getCurrency(), receiver.getCurrency());
         }
 
 
         Transaction transaction = new Transaction();
-        transaction.setSenderAccount(accountService.getAccountById(senderId));
-        transaction.setReceiverAccount(accountService.getAccountById(receiverId));
+        transaction.setSenderAccount(sender);
+        transaction.setReceiverAccount(receiver);
         transaction.setAmount(amount);
         transaction.setStatus(TransactionStatus.COMPLETED);
-
         Transaction savedTransaction = transactionRepository.save(transaction);
 
-        // Küldjük az értesítést Kafka-n keresztül
-        kafkaProducerService.sendTransactionNotification(savedTransaction);
+        accountService.changeBalance(sender.getId(), sender.getBalance().subtract(amount), savedTransaction.getId());
+        accountService.changeBalance(receiver.getId(), receiver.getBalance().add(amount), savedTransaction.getId());
 
+        kafkaProducerService.sendTransactionNotification(savedTransaction);
+        kafkaProducerService.modifyCurrencyNotification(savedTransaction.getId() + currencyChanged);
         return savedTransaction;
+    }
+
+    private String  convertCurrencies(BigDecimal amount, String oldCurrency, String newCurrency) {
+        amount = amount.multiply(new BigDecimal(1.01));
+        return ": Amount converted from" + oldCurrency + " to " + newCurrency;
     }
 }

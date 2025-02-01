@@ -23,11 +23,7 @@ public class TransactionController {
 
     @PostMapping
     public ResponseEntity<Transaction> createTransaction(@RequestBody TransactionRequest request) {
-        Transaction transaction = transactionService.processTransaction(
-                request.getSenderAccountId(),
-                request.getReceiverAccountId(),
-                request.getAmount()
-        );
+        Transaction transaction = transactionService.processTransaction(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
     }
 }

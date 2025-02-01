@@ -1,6 +1,15 @@
 spring:
   application:
     name: payment
+  kafka:
+    bootstrap-servers: localhost:9093
+    consumer:
+      group-id: payment-group
+      auto-offset-reset: earliest
+    producer:
+      retries: 3
+      acks: all
+
 
   datasource:
     url: jdbc:postgresql://localhost:5432/instant_payment
