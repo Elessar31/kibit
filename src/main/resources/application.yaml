@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: payment
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/instant_payment
+    username: admin
+    password: secret
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+server:
+  port: 8082
