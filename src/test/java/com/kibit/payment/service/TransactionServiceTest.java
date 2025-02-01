@@ -105,6 +105,7 @@ class TransactionServiceTest {
 
 
         Mockito.when(accountService.getAccountById(1L)).thenReturn(sender);
+        Mockito.when(accountService.getAccountById(2L)).thenReturn(receiver);
 
         // Act & Assert
         InsufficientBalanceException exception = Assertions.assertThrows(
@@ -149,7 +150,7 @@ class TransactionServiceTest {
         transaction.setId(1L);
         transaction.setSenderAccount(sender);
         transaction.setReceiverAccount(receiver);
-        transaction.setAmount(new BigDecimal("100.00"));
+        transaction.setAmount(new BigDecimal("110.00"));
 
         Mockito.when(accountService.getAccountById(1L)).thenReturn(sender);
         Mockito.when(accountService.getAccountById(2L)).thenReturn(receiver);
@@ -162,6 +163,58 @@ class TransactionServiceTest {
 
         // Assert
         Assertions.assertNotNull(result);
+        Mockito.verify(accountService).getAccountById(1L);
+        Mockito.verify(accountService).getAccountById(2L);
+        Mockito.verify(accountService).updateBalance(sender.getId(), new BigDecimal("390.000"), transaction.getId());
+        Mockito.verify(accountService).updateBalance(receiver.getId(), new BigDecimal("210.000"), transaction.getId());
         Mockito.verify(kafkaProducerService).modifyCurrencyNotification(Mockito.contains("Amount converted from"));
+    }
+
+    @Test
+    void processTransaction_nullRequest_throwsException() {
+        // Act & Assert
+        IllegalArgumentException exception = Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> transactionService.processTransaction(null)
+        );
+
+        Assertions.assertEquals("Transaction request cannot be null", exception.getMessage());
+        Mockito.verifyNoInteractions(accountService, transactionRepository, kafkaProducerService);
+    }
+
+    @Test
+    void processTransaction_nullAccountIds_throwsException() {
+        // Arrange
+        TransactionRequest request = new TransactionRequest();
+        request.setSenderAccountId(null);
+        request.setReceiverAccountId(null);
+        request.setAmount(new BigDecimal("100.00"));
+
+        // Act & Assert
+        IllegalArgumentException exception = Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> transactionService.processTransaction(request)
+        );
+
+        Assertions.assertEquals("Sender and receiver account IDs cannot be null", exception.getMessage());
+        Mockito.verifyNoInteractions(accountService, transactionRepository, kafkaProducerService);
+    }
+
+    @Test
+    void processTransaction_zeroOrNegativeAmount_throwsException() {
+        // Arrange
+        TransactionRequest request = new TransactionRequest();
+        request.setSenderAccountId(1L);
+        request.setReceiverAccountId(2L);
+        request.setAmount(BigDecimal.ZERO);
+
+        // Act & Assert
+        IllegalArgumentException exception = Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> transactionService.processTransaction(request)
+        );
+
+        Assertions.assertEquals("Transaction amount must be greater than zero", exception.getMessage());
+        Mockito.verifyNoInteractions(accountService, transactionRepository, kafkaProducerService);
     }
 }

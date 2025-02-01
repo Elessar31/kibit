@@ -13,6 +13,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * The UserController class is a REST controller responsible for managing users.
+ * It provides endpoints for creating users, retrieving a user by ID, and
+ * fetching all users.
+ *
+ * This controller maps requests to the `/api/users` endpoint and delegates
+ * user management operations to the UserService.
+ */
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
