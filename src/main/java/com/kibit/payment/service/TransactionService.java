@@ -4,6 +4,7 @@ import com.kibit.payment.dto.TransactionRequest;
 import com.kibit.payment.entity.Account;
 import com.kibit.payment.entity.Transaction;
 import com.kibit.payment.entity.TransactionStatus;
+import com.kibit.payment.exception.InsufficientBalanceException;
 import com.kibit.payment.repository.TransactionRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -38,7 +39,7 @@ public class TransactionService {
 
         BigDecimal amount = request.getAmount();
         if (sender.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Sender balance is less than the requested amount");
+            throw new InsufficientBalanceException("Sender balance is less than the requested amount");
         }
 
         if (!sender.getCurrency().equalsIgnoreCase(receiver.getCurrency())) {
@@ -61,7 +62,7 @@ public class TransactionService {
         return savedTransaction;
     }
 
-    private String  convertCurrencies(BigDecimal amount, String oldCurrency, String newCurrency) {
+    private String convertCurrencies(BigDecimal amount, String oldCurrency, String newCurrency) {
         amount = amount.multiply(new BigDecimal(1.01));
         return ": Amount converted from" + oldCurrency + " to " + newCurrency;
     }

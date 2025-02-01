@@ -1,6 +1,7 @@
 package com.kibit.payment.service;
 
 import com.kibit.payment.entity.User;
+import com.kibit.payment.exception.UserNotFoundException;
 import com.kibit.payment.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
@@ -25,7 +26,7 @@ public class UserService {
 
     public User updateUser(Long id, String name, String email) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         user.setName(name);
         user.setEmail(email);

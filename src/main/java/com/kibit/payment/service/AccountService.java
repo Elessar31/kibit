@@ -1,6 +1,7 @@
 package com.kibit.payment.service;
 
 import com.kibit.payment.entity.Account;
+import com.kibit.payment.exception.AccountNotFoundException;
 import com.kibit.payment.repository.AccountRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,7 @@ public class AccountService {
 
     public Account getAccountById(Long accountId) {
         return accountRepository.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new AccountNotFoundException("Account not found"));
     }
 
     public Account changeBalance(Long accountId, BigDecimal balance, Long transactionId) {
