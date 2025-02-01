@@ -11,9 +11,13 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Date;
 
+@Setter
+@Getter
 @Entity
 @Table(name = "transaction_notifications")
 public class TransactionNotification {
@@ -36,43 +40,4 @@ public class TransactionNotification {
     @Temporal(TemporalType.TIMESTAMP)
     private Date sentAt = new Date();
 
-    public Long getId() {
-        return this.id;
-    }
-
-    public Transaction getTransaction() {
-        return this.transaction;
-    }
-
-    public String getRecipientEmail() {
-        return this.recipientEmail;
-    }
-
-    public String getMessage() {
-        return this.message;
-    }
-
-    public Date getSentAt() {
-        return this.sentAt;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setTransaction(Transaction transaction) {
-        this.transaction = transaction;
-    }
-
-    public void setRecipientEmail(String recipientEmail) {
-        this.recipientEmail = recipientEmail;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public void setSentAt(Date sentAt) {
-        this.sentAt = sentAt;
-    }
 }
