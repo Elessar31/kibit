@@ -5,9 +5,11 @@ import com.kibit.payment.entity.Account;
 import com.kibit.payment.entity.Transaction;
 import com.kibit.payment.entity.TransactionNotification;
 import com.kibit.payment.entity.TransactionStatus;
+import com.kibit.payment.exception.AccountNotFoundException;
 import com.kibit.payment.exception.InsufficientBalanceException;
 import com.kibit.payment.repository.TransactionRepository;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -34,6 +36,7 @@ import java.math.BigDecimal;
  */
 @Service
 @Transactional
+@Slf4j
 public class TransactionService {
 
 
@@ -41,6 +44,8 @@ public class TransactionService {
     private final AccountService accountService;
     private final KafkaProducerService kafkaProducerService;
     private final TransactionNotificationService transactionNotificationService;
+
+
 
     /**
      * Constructs the TransactionService with the required dependencies.
@@ -62,12 +67,14 @@ public class TransactionService {
 
         Account sender = accountService.getAccountById(request.getSenderAccountId());
         if (sender == null) {
-            throw new IllegalArgumentException("Sender account does not exist");
+            log.error("Sender account does not exist");
+            throw new AccountNotFoundException("Sender account does not exist");
         }
 
         Account receiver = accountService.getAccountById(request.getReceiverAccountId());
         if (receiver == null) {
-            throw new IllegalArgumentException("Receiver account does not exist");
+            log.error("Receiver account does not exist");
+            throw new AccountNotFoundException("Receiver account does not exist");
         }
 
 
@@ -83,21 +90,26 @@ public class TransactionService {
 
     private void validateRequest(TransactionRequest request) {
         if (request == null) {
+            log.error("Transaction request cannot be null");
             throw new IllegalArgumentException("Transaction request cannot be null");
         }
         if (request.getSenderAccountId() == null || request.getReceiverAccountId() == null) {
+            log.error("Sender and receiver account IDs cannot be null");
             throw new IllegalArgumentException("Sender and receiver account IDs cannot be null");
         }
         if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            log.error("Transaction amount must be greater than zero");
             throw new IllegalArgumentException("Transaction amount must be greater than zero");
         }
         if (request.getSenderAccountId().equals(request.getReceiverAccountId())) {
+            log.error("Sender and receiver cannot be the same");
             throw new IllegalArgumentException("Sender and receiver cannot be the same");
         }
     }
 
     private void validateSenderBalance(Account sender, BigDecimal amount) {
         if (sender.getBalance().compareTo(amount) < 0) {
+            log.error("Sender balance is less than the requested amount");
             throw new InsufficientBalanceException("Sender balance is less than the requested amount");
         }
     }
@@ -141,6 +153,7 @@ public class TransactionService {
         TransactionNotification transactionNotification = new TransactionNotification();
         transactionNotification.setTransaction(transaction);
         transactionNotification.setRecipientEmail(receiverEmail);
+        transactionNotification.setMessage("Transaction ID: " + transaction.getId() + " has been completed");
         transactionNotificationService.save(transactionNotification);
     }
 

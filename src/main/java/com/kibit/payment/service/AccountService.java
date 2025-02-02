@@ -7,6 +7,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -25,12 +26,18 @@ public class AccountService {
                 .orElseThrow(() -> new AccountNotFoundException("Account not found"));
     }
 
+
+
     public Account updateBalance(Long accountId, BigDecimal balance, Long transactionId) {
-        Account account = getAccountById(accountId);
-        BigDecimal oldBalance = account.getBalance();
-        account.setBalance(balance);
-        kafkaProducerService.modifyBalanceNotification(account, oldBalance, transactionId);
-        return accountRepository.save(account);
+        Optional<Account> account = accountRepository.findByIdForUpdate(accountId);
+        if (account.isPresent()) {
+            BigDecimal oldBalance = account.get().getBalance();
+            account.get().setBalance(balance);
+            kafkaProducerService.modifyBalanceNotification(account.get(), oldBalance, transactionId);
+            return accountRepository.save(account.get());
+        } else {
+            throw new AccountNotFoundException("Account not found");
+        }
     }
 
 }
